@@ -15,4 +15,4 @@ The code is built upon ProtoPNet's official implementation (https://github.com/c
 ### Instructions for generating a PRP map for a test image
 1. Train a ProtoPNet model with your choice of dataset and save the model.
 2. Edit the settings file for changing the required parameters such as trained model's path and name, test image's path and name, prototype number for the PRP map, and base architecture used while training ProtoPNet.
-3. Run main.py for generating the PRP map.
+. Run main.py for generating the PRP map.
