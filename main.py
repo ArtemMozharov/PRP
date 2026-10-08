@@ -7,29 +7,30 @@ import matplotlib.pyplot as plt
 import cv2
 from model import construct_PPNet
 from config import load_config
-from settings import config_path
+from settings import config_path, experiments_path
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-config=load_config(config_path)
+config=load_config(config_path, experiments_path)
 
 for experiment in config.experiments:
     ### Load trained ProtoPNet model
     load_model_path = os.path.join(experiment.load_model_dir, experiment.load_model_name)
     state_dict = torch.load(load_model_path,map_location=torch.device(device))
 
-    ppnet = construct_PPNet(
-        base_architecture=experiment.base_architecture,
-        img_size=experiment.img_size,
-        prototype_shape=experiment.prototype_shape, 
-        prototype_activation_function=experiment.prototype_activation_function,
-        add_on_layers_type=experiment.add_on_layers_type,
-    )
+    if experiment.model == "protopnet":
+        ppnet = construct_PPNet(
+            base_architecture=experiment.base_architecture,
+            img_size=experiment.img_size,
+            prototype_shape=experiment.prototype_shape, 
+            prototype_activation_function=experiment.prototype_activation_function,
+            add_on_layers_type=experiment.add_on_layers_type,
+        )
 
-    ppnet.load_state_dict(state_dict)
-    ppnet = ppnet.to(device)
-    ppnet.eval()
+        ppnet.load_state_dict(state_dict)
+        ppnet = ppnet.to(device)
+        ppnet.eval()
 
-    prp_model = PRPCanonizedModel(ppnet,experiment.base_architecture)
+        prp_model = PRPCanonizedModel(ppnet,experiment.base_architecture)
 
 
     ### For a single test image and for a particular prototype
