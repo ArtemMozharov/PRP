@@ -8,11 +8,12 @@ import cv2
 from model import construct_PPNet
 from config import load_config
 from settings import config_path, experiments_path
+from tqdm import tqdm
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 config=load_config(config_path, experiments_path)
 
-for experiment in config.experiments:
+for experiment in tqdm(config.experiments):
     ### Load trained ProtoPNet model
     load_model_path = os.path.join(experiment.load_model_dir, experiment.load_model_name)
     state_dict = torch.load(load_model_path,map_location=torch.device(device))
