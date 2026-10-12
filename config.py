@@ -14,9 +14,7 @@ class Experiment:
         load_model_dir,
         load_model_name,
         test_image_dir,
-        test_image_name,
         write_path,
-        prototype_number,
         base_architecture,
         img_size,
         prototype_shape,
@@ -28,9 +26,7 @@ class Experiment:
         self.load_model_dir=load_model_dir
         self.load_model_name=load_model_name
         self.test_image_dir=test_image_dir
-        self.test_image_name=test_image_name
         self.write_path=write_path
-        self.prototype_number=prototype_number
         self.base_architecture=base_architecture
         self.img_size=img_size
         self.num_classes=num_classes
