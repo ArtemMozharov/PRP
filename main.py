@@ -97,6 +97,11 @@ for experiment in tqdm(config.experiments, desc="Experiments"):
         with torch.no_grad():
             logits, min_distances = ppnet(images_test)
             predicted_class = logits.argmax(dim=1).item()
+            # Keep the spatial prototype activations for visualization. The
+            # model's forward pass returns only globally pooled distances.
+            _, prototype_distances = ppnet.push_forward(images_test)
+            similarities = ppnet.distance_2_similarity(prototype_distances)
+
 
         # Find all prototypes assigned to the predicted class
         prototype_ids = torch.where(
@@ -124,13 +129,18 @@ for experiment in tqdm(config.experiments, desc="Experiments"):
 
             prp_map = np.asarray(prp_map).squeeze()
 
-            # Save PRP map
-            prp_path = image_output_dir / (
-                f"prp_{prototype_number}_{test_image_path.stem}.png"
-            )
+            # Save all outputs for this prototype in its own directory.
+            prototype_output_dir = image_output_dir / f"prototype_{prototype_number}"
+            prototype_output_dir.mkdir(parents=True, exist_ok=True)
+
+            prp_heatmap_path = prototype_output_dir / f"prp_heatmap_{test_image_path.stem}.png"
+            # Older runs may have created the image filename as a directory.
+            # Remove that mistaken directory only when it is empty.
+            if prp_heatmap_path.is_dir() and not any(prp_heatmap_path.iterdir()):
+                prp_heatmap_path.rmdir()
 
             plt.imsave(
-                prp_path,
+                prp_heatmap_path,
                 prp_map,
                 cmap="seismic",
                 vmin=-1,
@@ -155,12 +165,51 @@ for experiment in tqdm(config.experiments, desc="Experiments"):
                 0.6 * original + 0.4 * heatmap
             ).clip(0, 1)
 
-            overlay_path = image_output_dir / (
-                f"overlay_prp_{prototype_number}_"
-                f"{test_image_path.stem}.png"
+            prp_overlay_path = prototype_output_dir / f"prp_overlay_{test_image_path.stem}.png"
+            plt.imsave(prp_overlay_path, overlay)
+
+            # Get the spatial similarity map for this prototype
+            activation_map = similarities[0, prototype_number].cpu().numpy()
+
+            # Resize to the input image dimensions
+            activation_map = cv2.resize(
+                activation_map,
+                (experiment.img_size, experiment.img_size)
             )
 
-            plt.imsave(overlay_path, overlay)
+            # Normalize for visualization
+            activation_min = activation_map.min()
+            activation_max = activation_map.max()
+
+            if activation_max > activation_min:
+                activation_map = (
+                    (activation_map - activation_min)
+                    / (activation_max - activation_min)
+                )
+            else:
+                activation_map = np.zeros_like(activation_map)
+
+            # Save the ProtoPNet activation heatmap
+            activation_path = prototype_output_dir / f"ppnet_activation_{test_image_path.stem}.png"
+
+            plt.imsave(
+                activation_path,
+                activation_map,
+                cmap="jet",
+                vmin=0,
+                vmax=1
+            )
+
+            # Overlay the normalized ProtoPNet activation on the input image.
+            activation_colormap = plt.get_cmap("jet")(activation_map)[..., :3]
+            activation_overlay = (
+                0.6 * original + 0.4 * activation_colormap
+            ).clip(0, 1)
+            activation_overlay_path = (
+                prototype_output_dir
+                / f"ppnet_activation_overlay_{test_image_path.stem}.png"
+            )
+            plt.imsave(activation_overlay_path, activation_overlay)
 
     print(f"Finished experiment: {experiment.model}")
     print(f"Results saved to: {output_dir}")
