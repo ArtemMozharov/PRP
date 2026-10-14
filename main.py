@@ -211,5 +211,11 @@ for experiment in tqdm(config.experiments, desc="Experiments"):
             )
             plt.imsave(activation_overlay_path, activation_overlay)
 
+            # TODO: export the closest image from the training dataset to the prototype
+            # TODO: log the overall experiment stats into a csv filename
+            # TODO: log each image result stats (correctt or not, similaritu between stuff)
+
+
+
     print(f"Finished experiment: {experiment.model}")
     print(f"Results saved to: {output_dir}")
